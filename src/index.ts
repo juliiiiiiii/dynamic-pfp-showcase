@@ -1,7 +1,9 @@
-import express, { Request, Response } from 'express';
-import bcrypt from 'bcrypt';
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+import express, { Request, Response } from 'express';   // express
+import bcrypt from 'bcrypt';                            // permite hashear las contraseñas
+import { Pool } from 'pg';                              // importa pg
+import dotenv from 'dotenv';                            // importa el archivo .env (medio obvio)
+import multer from 'multer';                            // se encarga de leer el trafico de datos
+import path from 'path';                                // lee extensiones de archivos
 
 dotenv.config();
 
@@ -9,6 +11,20 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+app.use('/uploads', express.static('uploads'));
+
+const storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        callback(null, 'uploads/');
+    },
+    filename(req, file, callback) {
+        const sufix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        callback(null, sufix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage: storage })
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -21,7 +37,8 @@ pool.connect()
     .then(() => console.log('✅ Conectado exitosamente a la db Neon'))
     .catch((error) => console.error('❌ Error de conexión a la db', error));
 
-// Registro
+// Registro -------------------------------------------------------------------------
+
 app.post('/api/auth/register', async (req: Request, res: Response): Promise<any> => {
 
     const { email, user_name, password } = req.body;
@@ -54,7 +71,7 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
 
         res.status(201).json({
             mensaje: 'Usuario registrado con exito en neon :DDD',
-            usuario: nuevoUsuario
+            user: nuevoUsuario
         })
 
     } catch (error: any) {
@@ -68,7 +85,47 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
     }
 });
 
-// Devuelve los usuarios registrados
+// Subir imagen ----------------------------------------------------------------------------
+
+app.post('/api/users/:id/img', upload.single('img'), async (req: Request, res: Response): Promise<any> => {
+    
+    const userId = req.params.id;
+
+    if(!req.file) {
+        return res.status(400).json({ error: 'No se subio una imágen' });
+    }
+
+    const imgUrl = `/uploads/${req.file.filename}`;
+
+    try {
+        const query = `
+            UPDATE usuarios
+            SET pfp_url = $2
+            WHERE id = $1
+            RETURNING id, user_name, pfp_url;
+        `;
+
+        const values = [userId, imgUrl];
+
+        const result = await pool.query(query, values);
+
+        if(!result.rowCount) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json({
+            mensaje: 'Profile Picture actualizada con exito (ojala)',
+            user: result.rows[0]
+        });
+
+    } catch(error) {
+        console.error('Error al actualizar la pfp', error);
+        res.status(500).json({ error: 'Error al conectar con la db :((((' });
+    }
+});
+
+// Devuelve los usuarios registrados--------------------------
+
 app.get('/api/users', async (req: Request, res: Response) => {
     
     try {
