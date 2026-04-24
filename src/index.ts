@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';   // express
 import bcrypt from 'bcrypt';                            // permite hashear las contraseñas
-import { Pool } from 'pg';                              // importa pg
-import dotenv from 'dotenv';                            // importa el archivo .env (medio obvio)
-import multer from 'multer';                            // se encarga de leer el trafico de datos
+import dotenv from 'dotenv';                            // importa el archivo .env
+import multer from 'multer';                            // se encarga de recibir las imagenes que se suben al servidor
 import path from 'path';                                // lee extensiones de archivos
-import * as jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';                    // provee un token al iniciar sesion (expira a los 10m)
+import  sqlite3 from 'sqlite3';                         // driver de la db
+import { open } from 'sqlite';                          // permite iniciar la db
 
 dotenv.config();
 
@@ -27,16 +28,36 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
+export let db: any;
 
-pool.connect()
-    .then(() => console.log('✅ Conectado exitosamente a la db Neon'))
-    .catch((error) => console.error('❌ Error de conexión a la db', error));
+async function inicializarDb() {
+
+    try {
+
+        db = await open ({
+            filename: './database.sqlite',
+            driver: sqlite3.Database
+        });
+
+        console.log('Se conecto a la db SQLite');
+
+        await db.exec(`
+                CREATE TABLE IF NOT EXISTS usuarios(
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_name TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    pass_hash TEXT UNIQUE NOT NULL,
+                    pfp_url TEXT,
+                    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
+
+    } catch(error) {
+        console.error('Error al conectar con la db SQLite', error);
+    }
+};
+
+inicializarDb();
 
 // Registro -----------------------------------------------------------------------------------------------
 
@@ -65,7 +86,7 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
 
         const values = [userName, email, password_hash];
 
-        const result = await pool.query(query, values);
+        const result = await db.run(query, values);
 
         const nuevoUsuario = result.rows[0];
 
@@ -75,7 +96,7 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
         })
 
     } catch (error: any) {
-        console.error('Error al registrar usuario:', error);
+        console.error('Error al registrar usuario', error);
         
         if(error.code === '23505') {
             res.status(400).json({ error: 'email y/o user_name ya existe/n' });
@@ -105,7 +126,7 @@ app.post('/api/auth/login', async (req: Request, res: Response): Promise<any> =>
 
         const values = [userName];
 
-        const result = await pool.query(query, values);
+        const result = await db.run(query, values);
 
         if(!result.rowCount) {
             return res.status(400).json({ error: 'Usuario no encontrado' });
@@ -166,7 +187,7 @@ app.post('/api/users/:id/img', upload.single('img'), async (req: Request, res: R
 
         const values = [userId, imgUrl];
 
-        const result = await pool.query(query, values);
+        const result = await db.run(query, values);
 
         if(!result.rowCount) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -195,7 +216,7 @@ app.get('/api/users', async (req: Request, res: Response) => {
             ORDER BY id ASC;
         `;
         
-        const result = await pool.query(query);
+        const result = await db.get(query);
 
         res.json(result.rows);
 
