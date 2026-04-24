@@ -41,17 +41,6 @@ async function inicializarDb() {
 
         console.log('Se conecto a la db SQLite');
 
-        await db.exec(`
-                CREATE TABLE IF NOT EXISTS usuarios(
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_name TEXT UNIQUE NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
-                    pass_hash TEXT UNIQUE NOT NULL,
-                    pfp_url TEXT,
-                    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
-                );
-            `);
-
     } catch(error) {
         console.error('Error al conectar con la db SQLite', error);
     }
@@ -86,9 +75,7 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
 
         const values = [userName, email, password_hash];
 
-        const result = await db.run(query, values);
-
-        const nuevoUsuario = result.rows[0];
+        const nuevoUsuario = await db.get(query, values);
 
         res.status(201).json({
             mensaje: 'Usuario registrado con exito en neon :DDD',
@@ -126,13 +113,11 @@ app.post('/api/auth/login', async (req: Request, res: Response): Promise<any> =>
 
         const values = [userName];
 
-        const result = await db.run(query, values);
+        const userDb = await db.get(query, values);
 
-        if(!result.rowCount) {
+        if(!userDb) {
             return res.status(400).json({ error: 'Usuario no encontrado' });
         }
-
-        const userDb = result.rows[0];
 
         const cmp = await bcrypt.compare(password, userDb.pass_hash);
 
@@ -187,15 +172,15 @@ app.post('/api/users/:id/img', upload.single('img'), async (req: Request, res: R
 
         const values = [userId, imgUrl];
 
-        const result = await db.run(query, values);
+        const userActualizado = await db.get(query, values);
 
-        if(!result.rowCount) {
+        if(!userActualizado) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
         res.json({
             mensaje: 'Profile Picture actualizada con exito (ojala)',
-            user: result.rows[0]
+            user: userActualizado
         });
 
     } catch(error) {
@@ -216,9 +201,9 @@ app.get('/api/users', async (req: Request, res: Response) => {
             ORDER BY id ASC;
         `;
         
-        const result = await db.get(query);
+        const result = await db.all(query);
 
-        res.json(result.rows);
+        res.json(result);
 
     } catch(error) {
         console.error('No se pudo fetchear los usuarios de la db', error);
