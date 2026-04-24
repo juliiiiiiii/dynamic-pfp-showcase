@@ -4,6 +4,7 @@ import { Pool } from 'pg';                              // importa pg
 import dotenv from 'dotenv';                            // importa el archivo .env (medio obvio)
 import multer from 'multer';                            // se encarga de leer el trafico de datos
 import path from 'path';                                // lee extensiones de archivos
+import * as jwt from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -31,19 +32,19 @@ const pool = new Pool({
     ssl: {
         rejectUnauthorized: false
     }
-})
+});
 
 pool.connect()
     .then(() => console.log('✅ Conectado exitosamente a la db Neon'))
     .catch((error) => console.error('❌ Error de conexión a la db', error));
 
-// Registro -------------------------------------------------------------------------
+// Registro -----------------------------------------------------------------------------------------------
 
 app.post('/api/auth/register', async (req: Request, res: Response): Promise<any> => {
 
-    const { email, user_name, password } = req.body;
+    const { email, userName, password } = req.body;
 
-    if (!email || !user_name || !password) {
+    if (!email || !userName || !password) {
         return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
 
@@ -54,16 +55,15 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
 
     try {
 
-        // 10 son los "salt rounds": indica el costo algorítmico. 
         const password_hash = await bcrypt.hash(password, 10);
 
         const query = `
             INSERT INTO usuarios (user_name, email, pass_hash)
             VALUES ($1, $2, $3)
-            RETURNING id, user_name, email, fecha_registro
+            RETURNING id, user_name, email, fecha_registro;
         `;
 
-        const values = [user_name, email, password_hash];
+        const values = [userName, email, password_hash];
 
         const result = await pool.query(query, values);
 
@@ -85,7 +85,65 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
     }
 });
 
-// Subir imagen ----------------------------------------------------------------------------
+// Iniciar sesión -----------------------------------------------------------------------------------------
+
+app.post('/api/auth/login', async (req: Request, res: Response): Promise<any> => {
+
+    const { userName, password } = req.body;
+
+    if(!userName || !password) {
+        return res.status(400).json({ error: 'User name y password requeridos' });
+    }
+
+    try {
+
+        const query = `
+            SELECT user_name, pass_hash
+            FROM usuarios
+            WHERE user_name = $1;
+        `;
+
+        const values = [userName];
+
+        const result = await pool.query(query, values);
+
+        if(!result.rowCount) {
+            return res.status(400).json({ error: 'Usuario no encontrado' });
+        }
+
+        const userDb = result.rows[0];
+
+        const cmp = await bcrypt.compare(password, userDb.pass_hash);
+
+        console.log('COMPARACION CONTRASEÑA:', cmp);
+
+        if(!cmp) {
+            return res.status(401).json({ error: 'Contraseña incorrecta' });
+        }
+
+        const payload = {
+            id: userDb.id,
+            userName: userDb.user_name
+        };
+
+        const token = jwt.sign(
+            payload,
+            process.env.JWT_SECRET as string,
+            { expiresIn: '10m' }
+        );
+
+        res.json({
+            mensaje: 'Inicio de sesión verificado',
+            token: token
+        });
+
+    } catch(error) {
+        console.error('Error al iniciar sesión', error);
+        return res.status(500).json({ error: 'Error al conectar con la db' });
+    }
+});
+
+// Subir imagen -------------------------------------------------------------------------------------------
 
 app.post('/api/users/:id/img', upload.single('img'), async (req: Request, res: Response): Promise<any> => {
     
@@ -98,6 +156,7 @@ app.post('/api/users/:id/img', upload.single('img'), async (req: Request, res: R
     const imgUrl = `/uploads/${req.file.filename}`;
 
     try {
+
         const query = `
             UPDATE usuarios
             SET pfp_url = $2
@@ -124,11 +183,12 @@ app.post('/api/users/:id/img', upload.single('img'), async (req: Request, res: R
     }
 });
 
-// Devuelve los usuarios registrados--------------------------
+// Devuelve los usuarios registrados-----------------------------------------------------------------------
 
 app.get('/api/users', async (req: Request, res: Response) => {
     
     try {
+
         const query = `
             SELECT id, user_name, pfp_url
             FROM usuarios
@@ -143,7 +203,6 @@ app.get('/api/users', async (req: Request, res: Response) => {
         console.error('No se pudo fetchear los usuarios de la db', error);
         res.status(500).json({ error: 'Error al consultar la db' });
     }
-    
 });
 
 app.listen(PORT, () => {
