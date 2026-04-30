@@ -65,7 +65,7 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
 
     try {
 
-        const password_hash = await bcrypt.hash(password, 10);
+        const passHash = await bcrypt.hash(password, 10);
 
         const query = `
             INSERT INTO usuarios (user_name, email, pass_hash)
@@ -73,7 +73,7 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<any>
             RETURNING id, user_name, email, fecha_registro;
         `;
 
-        const values = [userName, email, password_hash];
+        const values = [userName, email, passHash];
 
         const nuevoUsuario = await db.get(query, values);
 
@@ -121,6 +121,7 @@ app.post('/api/auth/login', async (req: Request, res: Response): Promise<any> =>
 
         const cmp = await bcrypt.compare(password, userDb.pass_hash);
 
+        //para debuggear, luego eliminar
         console.log('COMPARACION CONTRASEÑA:', cmp);
 
         if(!cmp) {
