@@ -28,7 +28,7 @@ async function crearUsuarios () {
             const userName = `userPrueba${i}`;
             const email = `userPrueba${i}@prueba.com`;
             const passHash = await bcrypt.hash(`password${i}`, 10);
-            const pfpUrl = `./uploads/user${i}.png`;
+            const pfpUrl = `/uploads/user${i}.png`;
 
             await db.run(`
                 INSERT OR IGNORE INTO usuarios (user_name, email, pass_hash, pfp_url)

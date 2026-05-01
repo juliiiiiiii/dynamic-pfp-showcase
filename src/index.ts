@@ -6,11 +6,14 @@ import path from 'path';                                // lee extensiones de ar
 import * as jwt from 'jsonwebtoken';                    // provee un token al iniciar sesion (expira a los 10m)
 import  sqlite3 from 'sqlite3';                         // driver de la db
 import { open } from 'sqlite';                          // permite iniciar la db
+import cors from 'cors';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+app.use(cors());
 
 app.use(express.json());
 
