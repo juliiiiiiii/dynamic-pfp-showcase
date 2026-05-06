@@ -1,13 +1,15 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchUsers, User } from '@/services/userService';
 import { UserProfileCard } from '@/components/userProfileCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+
+const VISIBLE_COUNT = 7;
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const getUsers = async () => {
@@ -23,24 +25,28 @@ function App() {
     getUsers();
   }, []);
 
-  // Lógica para el carrusel infinito
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Duplicamos el inicio y el final de la lista para simular infinitud
-  const usersToDisplay = users.length > 0 
-    ? [...users, ...users.slice(0, 5)] 
-    : [];
-
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % (usersToDisplay.length - 10));
-  };
-
   useEffect(() => {
-    if (usersToDisplay.length > 10) {
-      const interval = setInterval(handleNext, 3000); // Cambia cada 3 segundos
-      return () => clearInterval(interval);
-    }
-  }, [usersToDisplay]);
+    if (users.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % users.length);
+    }, 1500);
+    return () => clearInterval(interval);
+
+  }, [users]);
+
+  // Build the window of cards to render: VISIBLE_COUNT cards centered on currentIndex
+  const getVisibleUsers = () => {
+    if(users.length === 0) return [];
+
+    const half = Math.floor(VISIBLE_COUNT / 2);
+    return Array.from({ length: VISIBLE_COUNT }, (_, i) => {
+      const offset = i - half;
+      const idx = ((currentIndex + offset) % users.length + users.length) % users.length;
+
+      return { user: users[idx], offset };
+    })
+  }
 
   if (loading) {
     return (
@@ -58,6 +64,8 @@ function App() {
     );
   }
 
+  const visibleUsers = getVisibleUsers();
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <header className="flex items-center justify-between pb-8 border-b border-gray-800">
@@ -69,29 +77,21 @@ function App() {
 
       <main className="pt-8">
         <h2 className="text-2xl font-semibold mb-8">Todos los usuarios</h2>
-        <div className="relative overflow-hidden w-full h-auto p-4 bg-gray-800 rounded-xl shadow-inner">
-          <motion.div
-            className="flex gap-4"
-            ref={containerRef}
-            initial={false}
-            animate={{ x: `-${currentIndex * (20 + 16)}%` }} // 20% width + 16px gap
-            transition={{ type: 'tween', ease: 'easeInOut', duration: 0.8 }}
-          >
-            <AnimatePresence initial={false}>
-              {usersToDisplay.map((user, index) => (
-                <div 
-                  key={`${user.id}-${index}`} 
-                  className="w-[20%] flex-shrink-0" // Cada tarjeta ocupa un 20% del contenedor
-                >
-                  <UserProfileCard
-                    id={user.id}
-                    username={user.user_name}
-                    pfp={user.pfp_url}
-                  />
-                </div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
+
+        <div className="relative w-full h-[320px] flex items-end content-center">
+
+          <AnimatePresence>
+            {visibleUsers.map(({ user, offset }) => (
+              <UserProfileCard
+                key={`${user.id}`} 
+                id={user.id}
+                username={user.user_name}
+                pfp={user.pfp_url}
+                offset={offset}
+              />
+            ))}
+          </AnimatePresence>
+          
         </div>
       </main>
     </div>

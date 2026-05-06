@@ -1,64 +1,105 @@
-import { motion, Variants } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { getPfpUrl } from '@/services/userService';
 
 interface UserProfileCardProps {
   id: number;
   username: string;
   pfp: string | null;
+  offset: number; // -3 to +3: 0 = center (front), ±1, ±2, ±3 = sides (back)
 }
 
-// Variantes de animación para simular el dibujo de 'atrás' hacia 'adelante'
-const cardVariants: Variants = {
-  initial: {
-    opacity: 0,
-    scale: 0.8,
-    // Ajuste para la animación de 'entrar atrás'
-    x: -100, 
-    zIndex: 1, // zIndex bajo al inicio
-  },
-  animate: {
-    opacity: 1,
-    scale: 1,
-    x: 0,
-    zIndex: 10, // zIndex alto cuando está al frente
-    transition: {
-      type: 'spring',
-      stiffness: 100,
-      damping: 20,
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.8,
-    // Ajuste para la animación de 'desaparecer atrás'
-    x: 100,
-    zIndex: 1, // zIndex bajo al salir
-    transition: {
-      duration: 0.5,
-    },
-  },
-};
+// Arc layout: offset drives scale, opacity, vertical position, and z-index
+function getArcStyle(offset: number) {
+  const abs = Math.abs(offset);
+ 
+  // Scale: center is biggest, sides shrink
+  const scale = 1 - abs * 0.13;
+ 
+  // Opacity: center is fully visible, outer cards fade out
+  const opacity = 1 - abs * 0.22;
+ 
+  // Vertical lift: center is at the bottom, outer cards rise (creating arc)
+  const yOffset = (abs * abs); // quadratic arc: 0, -10, -40, -90
+ 
+  // Horizontal spacing between card centers (px)
+  const xSpacing = 100;
+  const xOffset = offset * xSpacing;
+ 
+  // Z-index: center card is on top
+  const zIndex = 10 - abs;
+ 
+  return { scale, opacity, yOffset, xOffset, zIndex };
+}
 
-export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp }) => {
+export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp, offset }) => {
   const pfpUrl = getPfpUrl(pfp);
+  const { scale, opacity, yOffset, xOffset, zIndex } = getArcStyle(offset);
+
+  // Tamaño de la UserProfileCard visible, antes de escalar transformar
+  const baseSize = 120;
 
   return (
     <motion.div
-      className="flex flex-col items-center justify-center p-4 bg-gray-800 rounded-lg shadow-lg aspect-square"
-      variants={cardVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      layout // Ayuda con las animaciones de reordenamiento si es necesario
+      style={{
+        position: 'absolute',
+        left: '50%',
+        bottom: 0,
+        zIndex,
+        transformOrigin: 'bottom center',
+      }}
+      initial={{
+        x: (xOffset - 150),
+        y: yOffset - 30,
+        scale: scale,
+        opacity: 0
+      }}
+      animate={{
+        x: xOffset - baseSize / 2,
+        y: yOffset,
+        scale,
+        opacity,
+      }}
+      transition={{
+        type: 'spring',
+        stiffness: 200,
+        damping: 28,
+      }}
+      exit={{
+        x: (xOffset),
+        y: -(yOffset),
+        scale: scale,
+        opacity: 0
+      }}
     >
-      <div className="w-24 h-24 overflow-hidden rounded-full border-4 border-gray-700">
-        <img
-          src={pfpUrl}
-          alt={`PFP de ${username}`}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      <p className="mt-4 text-center text-white font-semibold text-lg">{username}</p>
-    </motion.div>
+    <div
+      style={{
+        width: baseSize,
+        height: baseSize,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        border: offset === 0 ? '3px solid rgba(255,255,255,0.9)' : '2px solid rgba(255,255,255,0.3)',
+        boxShadow: offset === 0 ? '0 0 24px rgba(255,255,255,0.15)' : 'none',
+      }}
+    >
+      <img
+        src={pfpUrl}
+        alt={`PFP de ${username}`}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+    </div>
+    <p
+      style={{
+        marginTop: 10,
+        color: offset === 0 ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.55)',
+        fontSize: offset === 0 ? 15 : 13,
+        fontWeight: offset === 0 ? 600 : 400,
+        textAlign: 'center',
+        whiteSpace: 'nowrap',
+        userSelect: 'none',
+      }}
+    >
+      {username}
+    </p>
+  </motion.div>
   );
 };
