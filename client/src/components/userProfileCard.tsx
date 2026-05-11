@@ -45,7 +45,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp,
         left: '50%',
         bottom: 0,
         zIndex,
-        transformOrigin: 'bottom center',
+        transformOrigin: 'bottom center'
       }}
       initial={{
         x: (xOffset - 150),
@@ -57,12 +57,12 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp,
         x: xOffset - baseSize / 2,
         y: yOffset,
         scale,
-        opacity,
+        opacity
       }}
       transition={{
         type: 'spring',
         stiffness: 200,
-        damping: 28,
+        damping: 28
       }}
       exit={{
         x: (xOffset),
@@ -78,7 +78,7 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp,
         borderRadius: '50%',
         overflow: 'hidden',
         border: offset === 0 ? '3px solid rgba(255,255,255,0.9)' : '2px solid rgba(255,255,255,0.3)',
-        boxShadow: offset === 0 ? '0 0 24px rgba(255,255,255,0.15)' : 'none',
+        boxShadow: offset === 0 ? '0 0 24px rgba(255,255,255,0.15)' : 'none'
       }}
     >
       <img
@@ -90,12 +90,12 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp,
     <p
       style={{
         marginTop: 10,
-        color: offset === 0 ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.55)',
+        color: offset === 0 ? 'rgba(0,0,0,1)' : 'rgba(0,0,0,0.55)',
         fontSize: offset === 0 ? 15 : 13,
         fontWeight: offset === 0 ? 600 : 400,
         textAlign: 'center',
         whiteSpace: 'nowrap',
-        userSelect: 'none',
+        userSelect: 'none'
       }}
     >
       {username}
