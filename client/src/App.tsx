@@ -4,12 +4,15 @@ import { UserProfileCard } from '@/components/userProfileCard';
 import { AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/button';
 import { CARD_COUNT } from '@/lib/constants';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import Login from '@/pages/login';
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  // Prueba sesion iniciada
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   useEffect(() => {
@@ -37,6 +40,8 @@ function App() {
   }, [users]);
 
   const buttonText = isLoggedIn ? "Modificar Perfil" : "Iniciar Sesion";
+
+  const navigate = useNavigate();
 
   // Build the window of cards to render: VISIBLE_COUNT cards centered on currentIndex
   const getVisibleUsers = () => {
@@ -70,35 +75,43 @@ function App() {
   const visibleUsers = getVisibleUsers();
 
   return (
-    <div className="min-h-screen bg-white text-black p-8">
-      <header className="flex items-center justify-between pb-8 border-b border-gray-800">
-        <h1 className="text-4xl font-bold">Dynamic PFP Showcase</h1>
-        <Button 
-          text = { buttonText }
-          onClick={ () => setIsLoggedIn(!isLoggedIn) }
-        />
-      </header>
-      
-      <main className="pt-8">
-        {/* <h2 className="text-2xl text-black font-semibold mb-8">Todos los usuarios</h2> */}
 
-        <div className="relative w-full h-[320px] flex items-end content-center mt-16">
-
-          <AnimatePresence>
-            {visibleUsers.map(({ user, offset }) => (
-              <UserProfileCard
-                key={`${user.id}`} 
-                id={user.id}
-                username={user.user_name}
-                pfp={user.pfp_url}
-                offset={offset}
-              />
-            ))}
-          </AnimatePresence>
+    <Routes>
+      <Route path='/' element={
+        <div className="min-h-screen bg-white text-black p-8">
+          <header className="flex items-center justify-between pb-8 border-b border-gray-800">
+            <h1 className="text-4xl font-bold">Dynamic PFP Showcase</h1>
+            <Button 
+              text = { buttonText }
+              onClick={ () => isLoggedIn ? navigate('') : navigate('pages/login')  /*() => setIsLoggedIn(!isLoggedIn)*/ }
+            />
+          </header>
           
+          <main className="pt-8">
+
+            <div className="relative w-full h-[320px] flex items-end content-center mt-16">
+
+              <AnimatePresence>
+                {visibleUsers.map(({ user, offset }) => (
+                  <UserProfileCard
+                    key={ `${user.id}` } 
+                    id={ user.id }
+                    username={ user.user_name }
+                    pfp={ user.pfp_url }
+                    offset={ offset }
+                  />
+                ))}
+              </AnimatePresence>
+              
+            </div>
+            
+          </main>
         </div>
-      </main>
-    </div>
+      }/>
+
+      <Route path='/pages/login' element={<Login/>}/>
+    </Routes>
+    
   );
 }
 
