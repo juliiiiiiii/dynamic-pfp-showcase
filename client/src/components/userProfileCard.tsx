@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { getPfpUrl } from '@/services/userService';
+import { useTheme } from '@/context/ThemeContext';
 
 interface UserProfileCardProps {
   id: number;
@@ -34,9 +35,25 @@ function getArcStyle(offset: number) {
 export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp, offset }) => {
   const pfpUrl = getPfpUrl(pfp);
   const { scale, opacity, yOffset, xOffset, zIndex } = getArcStyle(offset);
+  const { theme } = useTheme();
+
+  const isCenter = offset === 0;
+  const isDark = theme === 'dark';
 
   // Tamaño de la UserProfileCard visible, antes de escalar transformar
   const baseSize = 120;
+
+  const textColor = isCenter
+    ? isDark ? 'rgba(255, 255, 255, 1)' : 'rgba(0, 0, 0, 1)'
+    : isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.55)';
+
+  const borderStyle = isCenter
+    ? isDark ? '3px solid rgba(255, 255, 255, 0.9)' : '3px solid rgba(0, 0, 0, 0.15)'
+    : isDark ? '3px solid rgba(255, 255, 255, 0.2)' : '3px solid rgba(0, 0, 0, 0.08)';
+
+  const boxShadow = isCenter
+    ? isDark ? '0 0 24px rgba(255, 255, 255, 0.15)' : '0 0 24px rgba(0, 0, 0, 0.10)'
+    : 'none';
 
   return (
     <motion.div
@@ -77,25 +94,26 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp,
         height: baseSize,
         borderRadius: '50%',
         overflow: 'hidden',
-        border: offset === 0 ? '3px solid rgba(255,255,255,0.9)' : '2px solid rgba(255,255,255,0.3)',
-        boxShadow: offset === 0 ? '0 0 24px rgba(255,255,255,0.15)' : 'none'
+        border: borderStyle,
+        boxShadow
       }}
     >
       <img
+        className='w-full h-full object-cover display-block'
         src={pfpUrl}
         alt={`PFP de ${username}`}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
       />
     </div>
     <p
       style={{
         marginTop: 10,
-        color: offset === 0 ? 'rgba(0,0,0,1)' : 'rgba(0,0,0,0.55)',
-        fontSize: offset === 0 ? 15 : 13,
-        fontWeight: offset === 0 ? 600 : 400,
+        color: textColor,
+        fontSize: isCenter ? 15 : 13,
+        fontWeight: isCenter ? 600 : 400,
         textAlign: 'center',
         whiteSpace: 'nowrap',
-        userSelect: 'none'
+        userSelect: 'none',
+        transition: 'color 0.3s'
       }}
     >
       {username}

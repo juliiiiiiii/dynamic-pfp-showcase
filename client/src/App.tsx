@@ -5,7 +5,9 @@ import { AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/button';
 import { CARD_COUNT } from '@/lib/constants';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import Login from '@/pages/login';
+import Register from '@/pages/register';
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
@@ -78,13 +80,16 @@ function App() {
 
     <Routes>
       <Route path='/' element={
-        <div className="min-h-screen bg-white text-black p-8">
+        <div className="min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white transition-colors duration-300 p-8">
           <header className="flex items-center justify-between pb-8 border-b border-gray-800">
             <h1 className="text-4xl font-bold">Dynamic PFP Showcase</h1>
-            <Button 
-              text = { buttonText }
-              onClick={ () => isLoggedIn ? navigate('') : navigate('pages/login')  /*() => setIsLoggedIn(!isLoggedIn)*/ }
-            />
+            <div className='w-36'>
+              <Button 
+                text = { buttonText }
+                onClick={ () => isLoggedIn ? navigate('') : navigate('pages/login') }
+              />
+            </div>
+            
           </header>
           
           <main className="pt-8">
@@ -106,10 +111,12 @@ function App() {
             </div>
             
           </main>
+          <ThemeToggle/>
         </div>
       }/>
 
       <Route path='/pages/login' element={<Login/>}/>
+      <Route path='/pages/register' element={<Register/>} />
     </Routes>
     
   );
