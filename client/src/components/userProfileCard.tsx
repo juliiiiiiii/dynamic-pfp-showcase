@@ -95,11 +95,13 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ username, pfp,
         borderRadius: '50%',
         overflow: 'hidden',
         border: borderStyle,
-        boxShadow
+        boxShadow,
+        pointerEvents: 'none',
+        userSelect: 'none'
       }}
     >
       <img
-        className='w-full h-full object-cover display-block'
+        className='w-full h-full object-cover display-block pointer-events-none select-none'
         src={pfpUrl}
         alt={`PFP de ${username}`}
       />
