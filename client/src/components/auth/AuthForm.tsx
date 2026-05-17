@@ -53,6 +53,7 @@ export function AuthForm({
             value={values[field.key] ?? ''}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
+            disabled={loading}
             onKeyDown={handleKeyDown}
             className="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-[15px] text-gray-900 dark:text-white outline-none mb-4 transition-colors focus:border-violet-500 focus:bg-white dark:focus:bg-gray-700 placeholder:text-gray-300 dark:placeholder:text-gray-600"
           />
@@ -68,9 +69,9 @@ export function AuthForm({
       </div>
  
       <div className="flex items-center gap-2.5 mb-3.5">
-        <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
-        <span className="text-[12px] text-gray-300 dark:text-gray-600">o</span>
-        <div className="flex-1 h-px bg-gray-100 dark:text-gray-800" />
+        <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800 select-none" />
+        <span className="text-[12px] text-gray-300 dark:text-gray-600 select-none">o</span>
+        <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800 select-none" />
       </div>
  
       <Button text={secondaryLink.label} href={secondaryLink.href} />

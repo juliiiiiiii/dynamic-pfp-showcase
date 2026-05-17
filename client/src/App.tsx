@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { fetchUsers, User } from '@/services/userService';
-import { UserProfileCard } from '@/components/userProfileCard';
+import { UserProfileCard } from '@/components/UserProfileCard';
 import { AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/button';
 import { CARD_COUNT } from '@/lib/constants';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import Login from '@/pages/login';
 import Register from '@/pages/register';
@@ -15,7 +16,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   // Prueba sesion iniciada
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const { isLoggedIn, logout } = useAuth();
 
   useEffect(() => {
     const getUsers = async () => {
@@ -45,7 +46,14 @@ function App() {
 
   const navigate = useNavigate();
 
-  // Build the window of cards to render: VISIBLE_COUNT cards centered on currentIndex
+  const handleAuthButtonClick = () => {
+    if(isLoggedIn) {
+      navigate('/');
+    } else {
+      navigate('/pages/login');
+    }
+  }
+
   const getVisibleUsers = () => {
     if(users.length === 0) return [];
 
@@ -86,7 +94,7 @@ function App() {
             <div className='w-36'>
               <Button 
                 text = { buttonText }
-                onClick={ () => isLoggedIn ? navigate('') : navigate('pages/login') }
+                onClick={ handleAuthButtonClick }
               />
             </div>
             

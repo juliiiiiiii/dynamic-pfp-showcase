@@ -6,14 +6,15 @@
 // Boton para volver a inicio
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { AuthForm, FieldConfig } from '@/components/auth/AuthForm';
 import { ThemeToggle } from '@/components/ThemeToggle';
  
 const FIELDS: FieldConfig[] = [
-  { key: 'email',    label: 'Email',              type: 'email',    placeholder: 'tu@email.com' },
-  { key: 'userName', label: 'Nombre de usuario',  type: 'text',     placeholder: 'tu_usuario'   },
-  { key: 'password', label: 'Contraseña',          type: 'password', placeholder: '••••••••'     },
+  { key: 'email', label: 'Email', type: 'email', placeholder: 'tu@email.com' },
+  { key: 'userName', label: 'Nombre de usuario', type: 'text', placeholder: 'tu_usuario' },
+  { key: 'password', label: 'Contraseña', type: 'password', placeholder: '********' },
 ];
  
 export default function Register() {
@@ -21,6 +22,8 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
  
+  const navigate = useNavigate();
+
   const handleChange = (key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
@@ -30,6 +33,7 @@ export default function Register() {
       setError('Completá todos los campos');
       return;
     }
+
     setLoading(true);
     setError(null);
  
@@ -46,10 +50,12 @@ export default function Register() {
         setError(data.error || 'Error al registrarse');
         return;
       }
- 
-      // Registro exitoso, redirigir al login
+
+      navigate('/pages/login');
+
       window.location.href = '/login';
-    } catch {
+    } catch(error) {
+      console.error('Error en el register', error);
       setError('No se pudo conectar con el servidor');
     } finally {
       setLoading(false);
@@ -57,7 +63,7 @@ export default function Register() {
   };
  
   return (
-    <AuthLayout title="Crear cuenta" subtitle="Completá los datos para registrarte">
+    <AuthLayout title="Crear cuenta" subtitle="Completá los datos para unirte al showcase">
       <AuthForm
         fields={FIELDS}
         values={values}
