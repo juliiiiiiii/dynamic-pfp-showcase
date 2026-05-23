@@ -17,13 +17,12 @@ export const fetchUsers = async (): Promise<User[]> => {
 export const getPfpUrl = (pfpUrl: string | null): string => {
 
   if(!pfpUrl) {
-    return 'public/assets/default_pfp.png'; // Asegúrate de tener una imagen por defecto en 'public/assets/'
+    return 'public/assets/default_pfp.png'; // en caso de recien crear el perfil, se le asigna imagen default
   }
 
   const path = pfpUrl.startsWith('.')
     ? pfpUrl.substring(1)
     : pfpUrl;
 
-  // Retorna la URL de la imagen en 'uploads'
   return `${BACK_URL}${path}`
 };

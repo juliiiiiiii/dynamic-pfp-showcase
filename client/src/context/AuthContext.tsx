@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 // Definimos qué datos y funciones tendrá nuestro contexto
 interface AuthContextType {
@@ -16,7 +17,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const storedToken = localStorage.getItem('jwt_token');
     if (storedToken) {
-      setToken(storedToken);
+      try {
+        const decodedToken = jwtDecode(storedToken);
+        const currentTime = Date.now() / 1000;
+
+        if(decodedToken.exp && decodedToken.exp < currentTime) {
+          console.log('Sesion expirada. Cerrando sesion...');
+          localStorage.removeItem('jwt_token');
+          setToken(null);
+        } else {
+          setToken(storedToken);
+        }
+      } catch(error) {
+        localStorage.removeItem('jwt_token');
+        setToken(null);
+      }
+      
     }
   }, []);
 
